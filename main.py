@@ -21,6 +21,3 @@ def webhook():
     </Response>
     """
     return Response(reply.strip(), mimetype='text/xml')
-
-if __name__ == '__main__':
-    app.run()
