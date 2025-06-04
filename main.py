@@ -1,6 +1,18 @@
 import os
 from flask import Flask, request, Response
 from openai import OpenAI
+from elevenlabs import generate, save, set_api_key
+
+set_api_key("YOUR_ELEVENLABS_API_KEY")  # Replace with your actual API key
+
+def generate_audio(text, filename="audio.mp3"):
+    audio = generate(
+        text=text,
+        voice="Rachel",  # Replace with your preferred voice or voice_id
+        model="eleven_monolingual_v1"
+    )
+    save(audio, filename)
+    return filename
 
 app = Flask(__name__)
 
