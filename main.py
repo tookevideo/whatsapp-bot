@@ -33,7 +33,7 @@ def webhook():
             Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🌟
 
             Você está pronto para começar? 
-            *Responda com "Sim" para continuar.*
+            *Responda com \"Sim\" para continuar.*
           </Message>
         </Response>
         """
@@ -57,11 +57,11 @@ def webhook():
         reply = f"""
         <Response>
           <Message>
-            Frase útel:  
+            Frase útil:  
             🇺🇸 “{phrase}”  
             🇧🇷 “{translated}”
             
-            Se quiser ouvir a pronúncia, digite *speak*.
+            Se quiser ouvir a pronúncia, digite *falar*.
           </Message>
         </Response>
         """
@@ -75,7 +75,7 @@ def webhook():
             Vocabulário do dia:  
             🇺🇸 {vocab}
             
-            Se quiser ouvir a pronúncia, digite *speak*.
+            Se quiser ouvir a pronúncia, digite *falar*.
           </Message>
         </Response>
         """
@@ -84,14 +84,14 @@ def webhook():
         reply = """
         <Response>
           <Message>
-            Conectando com o Instrutor de IA...\n
-            Envie sua dúvida em inglês ou português 👇\n
-            *Se quiser ouvir a pronúncia de algo, digite "speak" depois.*
+            Conectando com o Instrutor de IA...
+            Envie sua dúvida em inglês ou português 👇
+            *Se quiser ouvir a pronúncia de algo, digite \"falar\" depois.*
           </Message>
         </Response>
         """
 
-    elif user_msg == 'speak':
+    elif user_msg == 'falar':
         audio_url = retrieve_audio_url()
         if audio_url:
             reply = f"""
@@ -125,7 +125,7 @@ def webhook():
             <Response>
               <Message>
                 {bot_reply}\n
-                *Digite "speak" se quiser ouvir a pronúncia.*
+                *Digite \"falar\" se quiser ouvir a pronúncia.*
               </Message>
             </Response>
             """
