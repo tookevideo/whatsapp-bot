@@ -22,6 +22,10 @@ def index():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+ print("SUPABASE_KEY is loaded:", bool(SUPABASE_KEY))
+    print("OPENAI_API_KEY is loaded:", bool(OPENAI_API_KEY))
+    print("ELEVEN_API_KEY is loaded:", bool(ELEVEN_API_KEY))
+
     user_msg = request.form.get('Body', '').strip().lower()
     print(f"Normalized message received: '{user_msg}'")  # Debug log
 
