@@ -169,7 +169,7 @@ def create_and_store_audio(text):
 
     with open(audio_filename, "rb") as f:
         file_data = f.read()
-        upload_url = f"{SUPABASE_URL}/storage/v1/object/audio/{audio_filename}"
+        upload_url = f"{SUPABASE_URL}/storage/v1/object/public/audio/{audio_filename}"
         headers = {
             "Authorization": f"Bearer {SUPABASE_KEY}",
             "Content-Type": "application/octet-stream"
