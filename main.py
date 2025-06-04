@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, Response
 
 app = Flask(__name__)
 
@@ -10,7 +10,17 @@ def index():
 def webhook():
     user_msg = request.form.get('Body', 'No message received.')
     print("Incoming message:", user_msg)
-    return jsonify({"reply": f"You said: {user_msg}"})
+
+    reply = """
+    <Response>
+      <Message>
+        Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷
+
+        Você está pronto para começar a aprender?
+      </Message>
+    </Response>
+    """
+    return Response(reply.strip(), mimetype='text/xml')
 
 if __name__ == '__main__':
     app.run()
