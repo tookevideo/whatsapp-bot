@@ -2,8 +2,6 @@ from flask import Flask, request, Response
 
 app = Flask(__name__)
 
-app = Flask(__name__)
-
 @app.route('/', methods=['GET'])
 def index():
     return "Bot is live!"
@@ -12,82 +10,60 @@ def index():
 def webhook():
     user_msg = request.form.get('Body', '').strip().lower()
     print("Incoming message:", user_msg)
+
+    # Start every reply with this greeting
+    reply = """
+<Response>
+  <Message>
+    Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷🇺🇸
     
-if user_msg.lower() in ['restart', 'reiniciar']:
-    reply = """
-    <Response>
-      <Message>
-        Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷🇺🇸
+    Você está pronto para começar?  
+    *Responda com "Sim" para continuar.*
+  </Message>
+"""
 
-        Você está pronto para começar?  
-        *Responda com "Sim" para continuar.*
-      </Message>
-    </Response>
-    """
-
-if user_msg in ['oi', 'olá', 'hello', 'hi']:
-    reply = """
-    <Response>
-      <Message>
-        Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷🇺🇸
-
-        Você está pronto para começar?  
-        *Responda com "Sim" para continuar.*
-      </Message>
-    </Response>
-    """
-
-    elif user_msg in ['sim', 'yes', 'claro']:
-        reply = """
-        <Response>
-          <Message>
-            Escolha uma opção para começar:
-            1️⃣ Frases úteis
-            2️⃣ Vocabulário
-            3️⃣ Falar com o Instrutor de IA 🤖
-          </Message>
-        </Response>
-        """
-
+    # Add specific responses depending on the user message
+    if user_msg in ['sim', 'yes', 'claro']:
+        reply += """
+  <Message>
+    Escolha uma opção para começar:
+    1️⃣ Frases úteis
+    2️⃣ Vocabulário
+    3️⃣ Falar com o Instrutor de IA 🤖
+  </Message>
+"""
     elif user_msg == '1':
-        reply = """
-        <Response>
-          <Message>
-            Frase útil:  
-            🇺🇸 “Where is the hotel?”  
-            🇧🇷 “Onde fica o hotel?”
-          </Message>
-        </Response>
-        """
-
+        reply += """
+  <Message>
+    Frase útil:  
+    🇺🇸 “Where is the hotel?”  
+    🇧🇷 “Onde fica o hotel?”
+  </Message>
+"""
     elif user_msg == '2':
-        reply = """
-        <Response>
-          <Message>
-            Vocabulário do dia:  
-            🇺🇸 Airport = Aeroporto  
-            🇺🇸 Passport = Passaporte
-          </Message>
-        </Response>
-        """
-
+        reply += """
+  <Message>
+    Vocabulário do dia:  
+    🇺🇸 Airport = Aeroporto  
+    🇺🇸 Passport = Passaporte
+  </Message>
+"""
     elif user_msg == '3':
-        reply = """
-        <Response>
-          <Message>
-            Conectando com o Instrutor de IA...  
-            Envie sua dúvida em inglês ou português 👇
-          </Message>
-        </Response>
-        """
-
+        reply += """
+  <Message>
+    Conectando com o Instrutor de IA...  
+    Envie sua dúvida em inglês ou português 👇
+  </Message>
+"""
+    elif user_msg in ['restart', 'reiniciar']:
+        # Already included in the default message above, so no additional message needed
+        pass
     else:
-        reply = """
-        <Response>
-          <Message>
-            Desculpe, não entendi. Responda com o número da opção desejada (1, 2 ou 3).
-          </Message>
-        </Response>
-        """
+        reply += """
+  <Message>
+    Desculpe, não entendi. Responda com o número da opção desejada (1, 2 ou 3).
+  </Message>
+"""
 
+    reply += "</Response>"
     return Response(reply.strip(), mimetype='text/xml')
