@@ -25,7 +25,6 @@ def webhook():
     user_msg = request.form.get('Body', '').strip().lower()
     print("Incoming message:", user_msg)
 
-    # Always send greeting if it's the first interaction or restart
     if user_msg in ['restart', 'reiniciar', 'oi', 'olá', 'hello', 'hi']:
         reply = """
         <Response>
@@ -33,7 +32,7 @@ def webhook():
             Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🌟
 
             Você está pronto para começar? 
-            *Responda com \"Sim\" para continuar.*
+            *Responda com "Sim" para continuar.*
           </Message>
         </Response>
         """
@@ -53,7 +52,7 @@ def webhook():
     elif user_msg == '1':
         phrase = "Where is the hotel?"
         translated = "Onde fica o hotel?"
-        create_and_store_audio(user_msg, phrase)
+        create_and_store_audio("last", phrase)
         reply = f"""
         <Response>
           <Message>
@@ -67,8 +66,9 @@ def webhook():
         """
 
     elif user_msg == '2':
+        phrase = "Airport. Passport."
         vocab = "Airport = Aeroporto\nPassport = Passaporte"
-        create_and_store_audio(user_msg, "Airport. Passport.")
+        create_and_store_audio("last", phrase)
         reply = f"""
         <Response>
           <Message>
@@ -86,7 +86,7 @@ def webhook():
           <Message>
             Conectando com o Instrutor de IA...
             Envie sua dúvida em inglês ou português 👇
-            *Se quiser ouvir a pronúncia de algo, digite \"falar\" depois.*
+            *Se quiser ouvir a pronúncia de algo, digite "falar" depois.*
           </Message>
         </Response>
         """
@@ -120,11 +120,16 @@ def webhook():
                 ]
             )
             bot_reply = response.choices[0].message.content.strip()
-            create_and_store_audio(user_msg, bot_reply)
+
+            # Extract English portion for pronunciation
+            english_line = next((line for line in bot_reply.split('\n') if line.strip().startswith('"') or line.strip().startswith("“")), bot_reply)
+            clean_english = english_line.strip('"“”') if english_line else bot_reply
+            create_and_store_audio("last", clean_english)
+
             reply = f"""
             <Response>
               <Message>
-                {bot_reply}\n
+                {bot_reply}
                 *Digite \"falar\" se quiser ouvir a pronúncia.*
               </Message>
             </Response>
@@ -141,7 +146,7 @@ def webhook():
 
     return Response(reply.strip(), mimetype='text/xml')
 
-def create_and_store_audio(user_msg, text):
+def create_and_store_audio(tag, text):
     audio_response = requests.post(
         "https://api.elevenlabs.io/v1/text-to-speech/Rachel",
         headers={
@@ -173,7 +178,7 @@ def create_and_store_audio(user_msg, text):
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/audio/{audio_filename}"
 
     metadata = {
-        "user_message": user_msg,
+        "user_message": tag,
         "audio_url": public_url,
         "created_at": datetime.utcnow().isoformat()
     }
@@ -189,7 +194,7 @@ def retrieve_audio_url():
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
     }
-    response = requests.get(f"{SUPABASE_URL}/rest/v1/audio_responses?select=audio_url&order=created_at.desc&limit=1", headers=headers)
+    response = requests.get(f"{SUPABASE_URL}/rest/v1/audio_responses?select=audio_url&user_message=eq.last&order=created_at.desc&limit=1", headers=headers)
     if response.ok and response.json():
         return response.json()[0]['audio_url']
     return None
