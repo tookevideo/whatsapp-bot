@@ -13,11 +13,11 @@ def webhook():
     user_msg = request.form.get('Body', '').strip().lower()
     print("Incoming message:", user_msg)
 
-    if user_msg in ['oi', 'olá', 'hello', 'hi']:
+if user_msg in ['oi', 'olá', 'hello', 'hi']:
     reply = """
     <Response>
       <Message>
-        Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷
+        Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷🇺🇸
 
         Você está pronto para começar?  
         *Responda com "Sim" para continuar.*
