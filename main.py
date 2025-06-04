@@ -6,7 +6,7 @@ from datetime import datetime
 import uuid
 import json
 
-# ElevenLabs + Supabase credentials
+# Keys and config
 SUPABASE_URL = "https://kaphgvwfgycfgpxponmw.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -27,94 +27,87 @@ def webhook():
     print("ELEVEN_API_KEY is loaded:", bool(ELEVEN_API_KEY))
 
     user_msg = request.form.get('Body', '').strip().lower()
-    print(f"Normalized message received: '{user_msg}'")  # Debug log
+    print(f"Normalized message received: '{user_msg}'")
 
-    reply = ""  # Ensure reply is always initialized
+    reply = ""
 
     if user_msg in ['restart', 'reiniciar', 'oi', 'olá', 'hello', 'hi']:
-        reply = """
-        <Response>
-          <Message>
-            Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🌟
+        reply = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🌟
 
-            Você está pronto para começar? 
-            *Responda com "sim" para continuar.*
-          </Message>
-        </Response>
-        """
+Você está pronto para começar? 
+*Responda com "sim" para continuar.*
+  </Message>
+</Response>"""
 
     elif user_msg in ['sim', 'yes', 'claro']:
-        reply = """
-        <Response>
-          <Message>
-            Escolha uma opção para começar:
-            1️⃣ Frases úteis  
-            2️⃣ Vocabulário  
-            3️⃣ Falar com o Instrutor de IA 🤖
-          </Message>
-        </Response>
-        """
+        reply = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Escolha uma opção para começar:
+1️⃣ Frases úteis  
+2️⃣ Vocabulário  
+3️⃣ Falar com o Instrutor de IA 🤖
+  </Message>
+</Response>"""
 
     elif user_msg == '1':
         phrase = "Where is the hotel?"
         translated = "Onde fica o hotel?"
         create_and_store_audio(phrase)
-        reply = f"""
-        <Response>
-          <Message>
-            Frase útil:  
-            🇺🇸 “{phrase}”  
-            🇧🇷 “{translated}”
+        reply = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Frase útil:  
+🇺🇸 “{phrase}”  
+🇧🇷 “{translated}”
 
-            Se quiser ouvir a pronúncia, digite *falar*.
-          </Message>
-        </Response>
-        """
+Se quiser ouvir a pronúncia, digite *falar*.
+  </Message>
+</Response>"""
 
     elif user_msg == '2':
         english_text = "Airport. Passport."
         vocab = "Airport = Aeroporto\nPassport = Passaporte"
         create_and_store_audio(english_text)
-        reply = f"""
-        <Response>
-          <Message>
-            Vocabulário do dia:  
-            🇺🇸 {vocab}
+        reply = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Vocabulário do dia:  
+🇺🇸 {vocab}
 
-            Se quiser ouvir a pronúncia, digite *falar*.
-          </Message>
-        </Response>
-        """
+Se quiser ouvir a pronúncia, digite *falar*.
+  </Message>
+</Response>"""
 
     elif user_msg == '3':
-        reply = """
-        <Response>
-          <Message>
-            Conectando com o Instrutor de IA...
-            Envie sua dúvida em inglês ou português 👇  
-            *Se quiser ouvir a pronúncia de algo, digite "falar" depois.*
-          </Message>
-        </Response>
-        """
+        reply = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Conectando com o Instrutor de IA...
+Envie sua dúvida em inglês ou português 👇  
+*Se quiser ouvir a pronúncia de algo, digite "falar" depois.*
+  </Message>
+</Response>"""
 
     elif user_msg == 'falar':
         audio_url = retrieve_audio_url()
         if audio_url:
-            reply = f"""
-            <Response>
-              <Message>
-                Aqui está a pronúncia: {audio_url}
-              </Message>
-            </Response>
-            """
+            reply = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Aqui está a pronúncia: {audio_url}
+  </Message>
+</Response>"""
         else:
-            reply = """
-            <Response>
-              <Message>
-                Desculpe, não encontrei uma pronúncia recente. Tente novamente após escolher uma frase ou palavra.
-              </Message>
-            </Response>
-            """
+            reply = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Desculpe, não encontrei uma pronúncia recente. Tente novamente após escolher uma frase ou palavra.
+  </Message>
+</Response>"""
 
     else:
         try:
@@ -126,30 +119,28 @@ def webhook():
                 ]
             )
             bot_reply = response.choices[0].message.content.strip()
-
-            # Extract English phrase if quoted, else fallback
             english_part = bot_reply.split('"')[1] if '"' in bot_reply else bot_reply
             create_and_store_audio(english_part)
 
-            reply = f"""
-            <Response>
-              <Message>
-                {bot_reply}
-                *Digite "falar" se quiser ouvir a pronúncia.*
-              </Message>
-            </Response>
-            """
+            reply = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+{bot_reply}
+*Digite "falar" se quiser ouvir a pronúncia.*
+  </Message>
+</Response>"""
         except Exception as e:
             print("Erro GPT:", e)
-            reply = f"""
-            <Response>
-              <Message>
-                Ocorreu um erro ao falar com o Instrutor de IA: {str(e)}
-              </Message>
-            </Response>
-            """
+            reply = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>
+Ocorreu um erro ao falar com o Instrutor de IA: {str(e)}
+  </Message>
+</Response>"""
 
+    print("Final reply being sent:\n", reply)
     return Response(reply.strip(), mimetype='text/xml')
+
 
 def create_and_store_audio(text):
     audio_response = requests.post(
@@ -160,10 +151,7 @@ def create_and_store_audio(text):
         },
         json={
             "text": text,
-            "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.5
-            }
+            "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
         }
     )
 
@@ -181,7 +169,6 @@ def create_and_store_audio(text):
         requests.put(upload_url, headers=headers, data=file_data)
 
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/audio/{audio_filename}"
-
     metadata = {
         "user_message": text,
         "audio_url": public_url,
@@ -193,6 +180,7 @@ def create_and_store_audio(text):
         "Content-Type": "application/json"
     }
     requests.post(f"{SUPABASE_URL}/rest/v1/audio_responses", headers=headers, data=json.dumps(metadata))
+
 
 def retrieve_audio_url():
     headers = {
