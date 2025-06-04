@@ -2,16 +2,18 @@ from flask import Flask, request, Response
 import openai
 import os
 import requests
-from supabase import create_client, Client
+from datetime import datetime
+import uuid
+import json
 
-# --- Configuration ---
-openai.api_key = os.getenv("OPENAI_API_KEY")  # Set your API Key in Render Environment Variables
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+# ElevenLabs + Supabase credentials
 SUPABASE_URL = "https://kaphgvwfgycfgpxponmw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # Truncated for clarity
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY")
 
-# --- App Setup ---
+openai.api_key = OPENAI_API_KEY
+
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
@@ -23,121 +25,171 @@ def webhook():
     user_msg = request.form.get('Body', '').strip().lower()
     print("Incoming message:", user_msg)
 
-    # Default greeting
-    if user_msg in ['restart', 'reiniciar', 'oi', 'olá', 'hello', 'hi'] or user_msg == "":
+    # Always send greeting if it's the first interaction or restart
+    if user_msg in ['restart', 'reiniciar', 'oi', 'olá', 'hello', 'hi']:
         reply = """
         <Response>
           <Message>
-            Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🇧🇷🇺🇸
+            Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🌟
 
-            Você está pronto para começar?  
+            Você está pronto para começar? 
             *Responda com "Sim" para continuar.*
           </Message>
         </Response>
         """
-        return Response(reply.strip(), mimetype='text/xml')
 
     elif user_msg in ['sim', 'yes', 'claro']:
         reply = """
         <Response>
           <Message>
             Escolha uma opção para começar:
-            1️⃣ Frases úteis  
-            2️⃣ Vocabulário  
+            1️⃣ Frases úteis
+            2️⃣ Vocabulário
             3️⃣ Falar com o Instrutor de IA 🤖
           </Message>
         </Response>
         """
-        return Response(reply.strip(), mimetype='text/xml')
 
     elif user_msg == '1':
         phrase = "Where is the hotel?"
-        audio_url = generate_audio(phrase)
+        translated = "Onde fica o hotel?"
+        create_and_store_audio(user_msg, phrase)
         reply = f"""
         <Response>
           <Message>
-            Frase útil:  
-            🇺🇸 {phrase}  
-            🇧🇷 “Onde fica o hotel?”
-            {audio_url}
+            Frase útel:  
+            🇺🇸 “{phrase}”  
+            🇧🇷 “{translated}”
+            
+            Se quiser ouvir a pronúncia, digite *speak*.
           </Message>
         </Response>
         """
-        return Response(reply.strip(), mimetype='text/xml')
 
     elif user_msg == '2':
         vocab = "Airport = Aeroporto\nPassport = Passaporte"
-        audio_url = generate_audio("Airport, Passport")
+        create_and_store_audio(user_msg, "Airport. Passport.")
         reply = f"""
         <Response>
           <Message>
             Vocabulário do dia:  
             🇺🇸 {vocab}
-            {audio_url}
+            
+            Se quiser ouvir a pronúncia, digite *speak*.
           </Message>
         </Response>
         """
-        return Response(reply.strip(), mimetype='text/xml')
 
     elif user_msg == '3':
-        try:
-            response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": """Você é um instrutor de inglês para brasileiros que estão se preparando para a COP30. Sempre use o português para explicações e comunicações. Fale em inglês de forma simples, evite frases longas e complicadas. Ensine cumprimentos, como receber visitantes, como fazer pequenas conversas, perguntar se estão gostando da cidade, e aspectos de cultura e turismo de Belém, Pará. Tente perceber o nível de inglês da pessoa e responda de forma apropriada. Nunca envie mensagens longas — sempre mantenha respostas curtas e práticas."""},
-                    {"role": "user", "content": "Olá, quero aprender inglês."}
-                ]
-            )
-            bot_response = response.choices[0].message.content.strip()
-        except Exception as e:
-            bot_response = f"Ocorreu um erro ao falar com o Instrutor de IA: {e}"
-
-        reply = f"""
-        <Response>
-          <Message>{bot_response}</Message>
-        </Response>
-        """
-        return Response(reply.strip(), mimetype='text/xml')
-
-    else:
         reply = """
         <Response>
           <Message>
-            Desculpe, não entendi.  
-            Responda com "1", "2" ou "3" para continuar, ou "Reiniciar" para começar do início.
+            Conectando com o Instrutor de IA...\n
+            Envie sua dúvida em inglês ou português 👇\n
+            *Se quiser ouvir a pronúncia de algo, digite "speak" depois.*
           </Message>
         </Response>
         """
-        return Response(reply.strip(), mimetype='text/xml')
 
+    elif user_msg == 'speak':
+        audio_url = retrieve_audio_url()
+        if audio_url:
+            reply = f"""
+            <Response>
+              <Message>
+                Aqui está a pronúncia: {audio_url}
+              </Message>
+            </Response>
+            """
+        else:
+            reply = """
+            <Response>
+              <Message>
+                Desculpe, não encontrei uma pronúncia recente. Tente novamente após escolher uma frase ou palavra.
+              </Message>
+            </Response>
+            """
 
-def generate_audio(text):
+    else:
+        try:
+            response = openai.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Você é um instrutor de inglês para brasileiros que estão se preparando para a COP30. Sempre responda em português com frases curtas e simples em inglês, e foque em saudações, turismo, cultura local e interações reais. Reconheça o nível de inglês e adapte seu ensino."},
+                    {"role": "user", "content": user_msg}
+                ]
+            )
+            bot_reply = response.choices[0].message.content.strip()
+            create_and_store_audio(user_msg, bot_reply)
+            reply = f"""
+            <Response>
+              <Message>
+                {bot_reply}\n
+                *Digite "speak" se quiser ouvir a pronúncia.*
+              </Message>
+            </Response>
+            """
+        except Exception as e:
+            print("Erro GPT:", e)
+            reply = f"""
+            <Response>
+              <Message>
+                Ocorreu um erro ao falar com o Instrutor de IA: {str(e)}
+              </Message>
+            </Response>
+            """
+
+    return Response(reply.strip(), mimetype='text/xml')
+
+def create_and_store_audio(user_msg, text):
+    audio_response = requests.post(
+        "https://api.elevenlabs.io/v1/text-to-speech/Rachel",
+        headers={
+            "xi-api-key": ELEVEN_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "text": text,
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.5
+            }
+        }
+    )
+
+    audio_filename = f"audio_{uuid.uuid4()}.mp3"
+    with open(audio_filename, "wb") as f:
+        f.write(audio_response.content)
+
+    with open(audio_filename, "rb") as f:
+        file_data = f.read()
+        upload_url = f"{SUPABASE_URL}/storage/v1/object/audio/{audio_filename}"
+        headers = {
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/octet-stream"
+        }
+        requests.put(upload_url, headers=headers, data=file_data)
+
+    public_url = f"{SUPABASE_URL}/storage/v1/object/public/audio/{audio_filename}"
+
+    metadata = {
+        "user_message": user_msg,
+        "audio_url": public_url,
+        "created_at": datetime.utcnow().isoformat()
+    }
     headers = {
-        "xi-api-key": ELEVENLABS_API_KEY,
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": "application/json"
     }
-    data = {
-        "text": text,
-        "model_id": "eleven_monolingual_v1",
-        "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
+    requests.post(f"{SUPABASE_URL}/rest/v1/audio_responses", headers=headers, data=json.dumps(metadata))
+
+def retrieve_audio_url():
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}"
     }
-
-    voice_id = "EXAVITQu4vr4xnSDxMaL"  # Default voice
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-
-    response = requests.post(url, json=data, headers=headers)
-    if response.status_code == 200:
-        audio_data = response.content
-        filename = f"audio_{text[:10].replace(' ', '_')}.mp3"
-        file_path = f"public/{filename}"
-
-        # Upload to Supabase bucket
-        supabase.storage.from_("audio").upload(file_path, audio_data, {"content-type": "audio/mpeg"})
-        public_url = f"{SUPABASE_URL}/storage/v1/object/public/audio/{filename}"
-        return f"🔊 Ouça: {public_url}"
-    else:
-        return "(Erro ao gerar áudio.)"
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    response = requests.get(f"{SUPABASE_URL}/rest/v1/audio_responses?select=audio_url&order=created_at.desc&limit=1", headers=headers)
+    if response.ok and response.json():
+        return response.json()[0]['audio_url']
+    return None
