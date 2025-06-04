@@ -8,8 +8,7 @@ def index():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.get_json()
-    user_msg = data.get('Body', 'No message received.')
+    user_msg = request.form.get('Body', 'No message received.')
     print("Incoming message:", user_msg)
     return jsonify({"reply": f"You said: {user_msg}"})
 
