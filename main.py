@@ -23,7 +23,9 @@ def index():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     user_msg = request.form.get('Body', '').strip().lower()
-    print("Incoming message:", user_msg)
+    print(f"Normalized message received: '{user_msg}'")  # Debug log
+
+    reply = ""  # Ensure reply is always initialized
 
     if user_msg in ['restart', 'reiniciar', 'oi', 'olá', 'hello', 'hi']:
         reply = """
@@ -32,7 +34,7 @@ def webhook():
             Obrigado por entrar em contato com o Bot de Aprendizado de Inglês da COP30. 🌟
 
             Você está pronto para começar? 
-            *Responda com \"Sim\" para continuar.*
+            *Responda com "sim" para continuar.*
           </Message>
         </Response>
         """
@@ -42,8 +44,8 @@ def webhook():
         <Response>
           <Message>
             Escolha uma opção para começar:
-            1️⃣ Frases úteis
-            2️⃣ Vocabulário
+            1️⃣ Frases úteis  
+            2️⃣ Vocabulário  
             3️⃣ Falar com o Instrutor de IA 🤖
           </Message>
         </Response>
@@ -85,8 +87,8 @@ def webhook():
         <Response>
           <Message>
             Conectando com o Instrutor de IA...
-            Envie sua dúvida em inglês ou português 👇
-            *Se quiser ouvir a pronúncia de algo, digite \"falar\" depois.*
+            Envie sua dúvida em inglês ou português 👇  
+            *Se quiser ouvir a pronúncia de algo, digite "falar" depois.*
           </Message>
         </Response>
         """
@@ -121,7 +123,7 @@ def webhook():
             )
             bot_reply = response.choices[0].message.content.strip()
 
-            # Extract English part
+            # Extract English phrase if quoted, else fallback
             english_part = bot_reply.split('"')[1] if '"' in bot_reply else bot_reply
             create_and_store_audio(english_part)
 
@@ -129,7 +131,7 @@ def webhook():
             <Response>
               <Message>
                 {bot_reply}
-                *Digite \"falar\" se quiser ouvir a pronúncia.*
+                *Digite "falar" se quiser ouvir a pronúncia.*
               </Message>
             </Response>
             """
@@ -193,7 +195,10 @@ def retrieve_audio_url():
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
     }
-    response = requests.get(f"{SUPABASE_URL}/rest/v1/audio_responses?select=audio_url&order=created_at.desc&limit=1", headers=headers)
+    response = requests.get(
+        f"{SUPABASE_URL}/rest/v1/audio_responses?select=audio_url&order=created_at.desc&limit=1",
+        headers=headers
+    )
     if response.ok and response.json():
         return response.json()[0]['audio_url']
     return None
